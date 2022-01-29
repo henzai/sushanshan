@@ -25,6 +25,12 @@ pub async fn main(req: Request, env: Env) -> Result<Response> {
             let version = ctx.var("WORKERS_RS_VERSION")?.to_string();
             Response::ok(version)
         })
+        .get_async("/test", |_, ctx| async move {
+            let deepl_api_key = ctx.secret("DEEPL_API_KEY")?.to_string();
+            let translator = handler::Translator::new(&deepl_api_key);
+            let text = translator.translate("apple").await?;
+            Response::ok(text)
+        })
         .post_async("/sushanshan", |req, ctx| async move {
             handle_su_shan_shan(req, ctx).await
         })

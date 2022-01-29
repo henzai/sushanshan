@@ -1,17 +1,20 @@
+pub use translation::*;
+
 use ed25519_compact::{PublicKey, Signature};
 
 use model::{Interaction, InteractionResponse, InteractionResponseType, InteractionType, Message};
 use worker::*;
 mod model;
+mod translation;
 
 pub async fn handle_su_shan_shan(req: Request, ctx: RouteContext<()>) -> Result<Response> {
-    if let Err(_e) = validate(req.clone()?, ctx).await {
+    if let Err(_e) = validate(req.clone()?, &ctx).await {
         return Response::error("unauthorized", 401);
     }
-    response_interaction(req).await
+    response_interaction(req, &ctx).await
 }
 
-async fn validate(mut req: Request, ctx: RouteContext<()>) -> Result<bool> {
+async fn validate(mut req: Request, ctx: &RouteContext<()>) -> Result<bool> {
     let body: Vec<u8> = req.bytes().await?;
     let hd = req.headers();
 
@@ -37,7 +40,7 @@ async fn validate(mut req: Request, ctx: RouteContext<()>) -> Result<bool> {
     Ok(true)
 }
 
-async fn response_interaction(mut req: Request) -> Result<Response> {
+async fn response_interaction(mut req: Request, ctx: &RouteContext<()>) -> Result<Response> {
     let i = bind_interaction(&mut req).await?;
     match i.interaction_type {
         InteractionType::Ping => InteractionResponse {
@@ -50,7 +53,17 @@ async fn response_interaction(mut req: Request) -> Result<Response> {
             let messages = i.data.unwrap().resolved.unwrap().messages.unwrap();
             let msgs: Vec<&Message> = messages.iter().map(|(_key, msg)| msg).collect();
             let msg = msgs[0];
-            InteractionResponse::reply(msg.content.clone()).into_response()
+
+            let deepl_api_key = ctx.secret("DEEPL_API_KEY")?.to_string();
+
+            console_log!("{:?}\n", "aaaaaa");
+
+            let translator = translation::Translator::new(&deepl_api_key);
+            let text = translator.translate(&msg.content).await?;
+
+            console_log!("{:?}\n", "bbbbbbb");
+
+            InteractionResponse::reply(format!("{}\n>{}", &msg.content, text)).into_response()
         }
     }
 }

@@ -1,3 +1,5 @@
+use http::{Method, Request};
+use hyper::{Body, Client};
 use serde::Deserialize;
 use url::Url;
 
@@ -20,33 +22,25 @@ impl Translator {
         )
         .map_err(|e| e.to_string())?;
 
-        Ok("".into())
-        // let mut init = RequestInit::new();
-        // init.with_method(Method::Get);
-        // let mut request =
-        //     Request::new_with_init(end_point.as_str(), &init).map_err(|e| e.to_string())?;
+        let client = Client::new();
 
-        // // let mut request =
-        // //     Request::new(end_point.as_str(), Method::Get).map_err(|e| e.to_string())?;
-        // let headers = request.headers_mut().unwrap();
-        // headers
-        //     .set("Authorization", &authorization_header_value)
-        //     .map_err(|e| e.to_string())?;
-        // headers
-        //     .set("host", "ranwei.dev")
-        //     .map_err(|e| e.to_string())?;
+        let req = Request::builder()
+            .method(Method::GET)
+            .uri(end_point.as_str())
+            .header("Authorization", authorization_header_value)
+            .body(Body::empty())
+            .unwrap();
 
-        // let mut response = Fetch::Request(request)
-        //     .send()
-        //     .await
-        //     .map_err(|e| e.to_string())?;
+        let response = client.request(req).await.map_err(|e| e.to_string())?;
 
-        // let byte = response.bytes().await.map_err(|e| e.to_string())?;
+        let byte = hyper::body::to_bytes(response)
+            .await
+            .map_err(|e| e.to_string())?;
 
-        // let translation_response = serde_json::from_slice::<TranslationResponse>(byte.as_ref())
-        //     .map_err(|e| e.to_string())?;
+        let translation_response = serde_json::from_slice::<TranslationResponse>(byte.as_ref())
+            .map_err(|e| e.to_string())?;
 
-        // Ok(translation_response.translations[0].text.to_owned())
+        Ok(translation_response.translations[0].text.to_owned())
     }
 }
 

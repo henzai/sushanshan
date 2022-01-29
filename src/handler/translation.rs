@@ -1,5 +1,3 @@
-use http::{Method, Request};
-use hyper::{Body, Client};
 use serde::Deserialize;
 use url::Url;
 
@@ -22,21 +20,18 @@ impl Translator {
         )
         .map_err(|e| e.to_string())?;
 
-        let client = Client::new();
+        let client = reqwest::Client::new();
 
-        let req = Request::builder()
-            .method(Method::GET)
-            .uri(end_point.as_str())
+        let end_point = end_point.as_str();
+
+        let response = client
+            .get(end_point)
             .header("Authorization", authorization_header_value)
-            .body(Body::empty())
-            .unwrap();
-
-        let response = client.request(req).await.map_err(|e| e.to_string())?;
-
-        let byte = hyper::body::to_bytes(response)
+            .send()
             .await
             .map_err(|e| e.to_string())?;
 
+        let byte = response.bytes().await.map_err(|e| e.to_string())?;
         let translation_response = serde_json::from_slice::<TranslationResponse>(byte.as_ref())
             .map_err(|e| e.to_string())?;
 

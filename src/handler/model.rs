@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
+use http::Response;
+use hyper::Body;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
-use worker::Response;
-use worker::Result;
 
 #[derive(Debug, Deserialize)]
 pub struct Interaction {
@@ -49,26 +49,6 @@ pub struct ApplicationCommandInteractionData {
     options: Option<Vec<ApplicationCommandInteractionDataOption>>,
 }
 
-impl InteractionResponse {
-    pub fn reply(content: String) -> InteractionResponse {
-        InteractionResponse {
-            interaction_response_type: InteractionResponseType::ChannelMessageWithSource,
-            data: Some(InteractionApplicationCommandCallbackData {
-                tts: None,
-                content: Some(content),
-                flags: None,
-            }),
-        }
-    }
-    pub fn into_response(self) -> Result<Response> {
-        let sss = serde_json::to_vec(&self)?;
-        let res = Response::from_bytes(sss)?;
-        let mut hds = worker::Headers::new();
-        hds.set("content-type", "application/json")?;
-        Ok(res.with_headers(hds))
-    }
-}
-
 #[derive(Debug, Deserialize)]
 struct ApplicationCommandInteractionDataOption {
     name: String,
@@ -110,6 +90,26 @@ pub struct InteractionResponse {
     #[serde(rename = "type")]
     pub interaction_response_type: InteractionResponseType,
     pub data: Option<InteractionApplicationCommandCallbackData>,
+}
+
+impl InteractionResponse {
+    pub fn reply(content: String) -> InteractionResponse {
+        InteractionResponse {
+            interaction_response_type: InteractionResponseType::ChannelMessageWithSource,
+            data: Some(InteractionApplicationCommandCallbackData {
+                tts: None,
+                content: Some(content),
+                flags: None,
+            }),
+        }
+    }
+    pub fn into_response(self) -> Result<Response<Body>, String> {
+        let sss = serde_json::to_string(&self).map_err(|e| e.to_string())?;
+        Response::builder()
+            .header(http::header::CONTENT_TYPE, "application/json")
+            .body(sss.into())
+            .map_err(|e| e.to_string())
+    }
 }
 
 #[derive(Serialize_repr, Debug)]

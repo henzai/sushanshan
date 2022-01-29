@@ -17,7 +17,7 @@ mod handler_error;
 mod model;
 mod translation;
 
-pub async fn handle_su_shan_shan(
+pub async fn su_shan_shan(
     headers: HeaderMap,
     body: Bytes,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -70,7 +70,7 @@ async fn response_interaction(body: Bytes) -> Result<impl IntoResponse, HandleEr
         .into_response()
         .map_err(|e| HandleError::ParseResponse(e)),
         InteractionType::ApplicationCommand => {
-            // console_log!("{:?}", i);
+            println!("{:?}", i);
             let messages = i.data.unwrap().resolved.unwrap().messages.unwrap();
             let msgs: Vec<&Message> = messages.iter().map(|(_key, msg)| msg).collect();
             let msg = msgs[0];

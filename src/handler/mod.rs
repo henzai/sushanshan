@@ -1,4 +1,5 @@
 use axum::body::Bytes;
+use axum::extract::Path;
 use axum::http::header::HeaderMap;
 use axum::response::IntoResponse;
 use ed25519_compact::{PublicKey, Signature};
@@ -16,6 +17,21 @@ use handler_error::HandleError::Internal;
 mod handler_error;
 mod model;
 mod translation;
+
+pub async fn trans(Path(text): Path<String>) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let deepl_api_key =
+        env::var("DEEPL_API_KEY").map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+
+    let translator = translation::Translator::new(&deepl_api_key);
+    let text = translator
+        .translate(&text)
+        .await
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_owned()))?;
+
+    InteractionResponse::reply(format!("{}\n>{}", text, text))
+        .into_response()
+        .map_err(|e| (StatusCode::BAD_REQUEST, "murimuri2".to_owned()))
+}
 
 pub async fn su_shan_shan(
     headers: HeaderMap,

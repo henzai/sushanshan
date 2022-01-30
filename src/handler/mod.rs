@@ -96,7 +96,9 @@ fn bind_interaction(body: Bytes) -> Result<Interaction, HandleError> {
     serde_json::from_slice::<Interaction>(&body).map_err(|_e| HandleError::Parse)
 }
 
-pub async fn trans(Path(text): Path<String>) -> Result<impl IntoResponse, (StatusCode, String)> {
+pub async fn translate_to_japanese(
+    Path(text): Path<String>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
     let deepl_api_key =
         env::var("DEEPL_API_KEY").map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 

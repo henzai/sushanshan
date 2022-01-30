@@ -2,13 +2,13 @@ use axum::routing::{get, post};
 use axum::Router;
 use handler::handle_interaction;
 
-use crate::handler::trans;
+use crate::handler::translate_to_japanese;
 mod handler;
 
 #[tokio::main]
 async fn main() {
     let app = Router::new()
-        .route("/:text", get(trans))
+        .route("/:text", get(translate_to_japanese))
         .route("/", post(handle_interaction))
         .route("/sushanshan", post(handle_interaction));
 

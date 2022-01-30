@@ -28,3 +28,4 @@ steps:
       ]
 images:
   - asia.gcr.io/discord-bot-308317/sushanshan
+timeout: 1200s

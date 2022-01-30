@@ -1,22 +1,17 @@
+use super::error::HandleError;
+use super::error::HandleError::AuthenticationForbiden;
+use super::error::HandleError::Internal;
+use crate::model::{
+    Interaction, InteractionResponse, InteractionResponseType, InteractionType, Message,
+};
+use crate::translation::Translator;
 use axum::body::Bytes;
 use axum::extract::Path;
 use axum::http::header::HeaderMap;
 use axum::response::IntoResponse;
 use ed25519_compact::{PublicKey, Signature};
 use http::StatusCode;
-
 use std::env;
-pub use translation::*;
-
-use model::{Interaction, InteractionResponse, InteractionResponseType, InteractionType, Message};
-
-use handler_error::HandleError;
-use handler_error::HandleError::AuthenticationForbiden;
-use handler_error::HandleError::Internal;
-
-mod handler_error;
-mod model;
-mod translation;
 
 pub async fn handle_interaction(
     headers: HeaderMap,
@@ -79,7 +74,7 @@ async fn response_interaction(body: Bytes) -> Result<impl IntoResponse, HandleEr
             let deepl_api_key = env::var("DEEPL_API_KEY")
                 .map_err(|e| HandleError::NotFoundSecret(e.to_string()))?;
 
-            let translator = translation::Translator::new(&deepl_api_key);
+            let translator = Translator::new(&deepl_api_key);
             let text = translator
                 .translate(&msg.content)
                 .await
@@ -102,7 +97,7 @@ pub async fn translate_to_japanese(
     let deepl_api_key =
         env::var("DEEPL_API_KEY").map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
-    let translator = translation::Translator::new(&deepl_api_key);
+    let translator = Translator::new(&deepl_api_key);
     let translated = translator
         .translate(&text)
         .await

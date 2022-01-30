@@ -1,9 +1,6 @@
 use axum::routing::{get, post};
 use axum::Router;
-use handler::handle_interaction;
-
-use crate::handler::translate_to_japanese;
-mod handler;
+use sushanshan::handler::interaction::{handle_interaction, translate_to_japanese};
 
 #[tokio::main]
 async fn main() {

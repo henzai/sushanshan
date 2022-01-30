@@ -108,5 +108,10 @@ pub async fn trans(Path(text): Path<String>) -> Result<impl IntoResponse, (Statu
 
     InteractionResponse::reply(format!("`{}` ->\n{}", text, translated))
         .into_response()
-        .map_err(|_e| (StatusCode::BAD_REQUEST, "murimuri2".to_owned()))
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("cannot reply response error:{}", e),
+            )
+        })
 }

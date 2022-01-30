@@ -45,7 +45,7 @@ pub async fn validate(body: Bytes, headers: &HeaderMap) -> Result<(), HandleErro
 
     let timestamp = headers
         .get("X-Signature-Timestamp")
-        .ok_or(Internal("cannot get X-Signature-Timestamp".to_string()))?;
+        .ok_or_else(|| Internal("cannot get X-Signature-Timestamp".to_string()))?;
     let content = vec![timestamp.as_bytes(), &body].concat();
 
     let discord_pub_key = env::var("DISCORD_PUBLIC_KEY").map_err(|e| Internal(e.to_string()))?;
@@ -69,7 +69,7 @@ async fn response_interaction(body: Bytes) -> Result<impl IntoResponse, HandleEr
             data: None,
         }
         .into_response()
-        .map_err(|e| HandleError::ParseResponse(e)),
+        .map_err(HandleError::ParseResponse),
         InteractionType::ApplicationCommand => {
             println!("{:?}", i);
             let messages = i.data.unwrap().resolved.unwrap().messages.unwrap();
@@ -83,17 +83,17 @@ async fn response_interaction(body: Bytes) -> Result<impl IntoResponse, HandleEr
             let text = translator
                 .translate(&msg.content)
                 .await
-                .map_err(|e| HandleError::FailedTranslation(e))?;
+                .map_err(HandleError::FailedTranslation)?;
 
             InteractionResponse::reply(format!("`{}` ->\n{}", &msg.content, text))
                 .into_response()
-                .map_err(|e| HandleError::ParseResponse(e))
+                .map_err(HandleError::ParseResponse)
         }
     }
 }
 
 fn bind_interaction(body: Bytes) -> Result<Interaction, HandleError> {
-    serde_json::from_slice::<Interaction>(&body).map_err(|e| HandleError::Parse)
+    serde_json::from_slice::<Interaction>(&body).map_err(|_e| HandleError::Parse)
 }
 
 pub async fn trans(Path(text): Path<String>) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -104,9 +104,9 @@ pub async fn trans(Path(text): Path<String>) -> Result<impl IntoResponse, (Statu
     let translated = translator
         .translate(&text)
         .await
-        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_owned()))?;
+        .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
 
     InteractionResponse::reply(format!("`{}` ->\n{}", text, translated))
         .into_response()
-        .map_err(|e| (StatusCode::BAD_REQUEST, "murimuri2".to_owned()))
+        .map_err(|_e| (StatusCode::BAD_REQUEST, "murimuri2".to_owned()))
 }

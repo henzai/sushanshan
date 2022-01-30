@@ -18,7 +18,7 @@ mod handler_error;
 mod model;
 mod translation;
 
-pub async fn su_shan_shan(
+pub async fn handle_interaction(
     headers: HeaderMap,
     body: Bytes,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {

@@ -1,6 +1,6 @@
 use axum::routing::{get, post};
 use axum::Router;
-use handler::su_shan_shan;
+use handler::handle_interaction;
 
 use crate::handler::trans;
 mod handler;
@@ -9,7 +9,7 @@ mod handler;
 async fn main() {
     let app = Router::new()
         .route("/:text", get(trans))
-        .route("/", post(su_shan_shan));
+        .route("/", post(handle_interaction));
 
     let addr = ([0, 0, 0, 0], 8080).into();
     println!("Listening on http://{}", addr);

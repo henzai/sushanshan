@@ -18,21 +18,6 @@ mod handler_error;
 mod model;
 mod translation;
 
-pub async fn trans(Path(text): Path<String>) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let deepl_api_key =
-        env::var("DEEPL_API_KEY").map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
-
-    let translator = translation::Translator::new(&deepl_api_key);
-    let translated = translator
-        .translate(&text)
-        .await
-        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_owned()))?;
-
-    InteractionResponse::reply(format!("`{}` ->\n{}", text, translated))
-        .into_response()
-        .map_err(|e| (StatusCode::BAD_REQUEST, "murimuri2".to_owned()))
-}
-
 pub async fn su_shan_shan(
     headers: HeaderMap,
     body: Bytes,
@@ -109,4 +94,19 @@ async fn response_interaction(body: Bytes) -> Result<impl IntoResponse, HandleEr
 
 fn bind_interaction(body: Bytes) -> Result<Interaction, HandleError> {
     serde_json::from_slice::<Interaction>(&body).map_err(|e| HandleError::Parse)
+}
+
+pub async fn trans(Path(text): Path<String>) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let deepl_api_key =
+        env::var("DEEPL_API_KEY").map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+
+    let translator = translation::Translator::new(&deepl_api_key);
+    let translated = translator
+        .translate(&text)
+        .await
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_owned()))?;
+
+    InteractionResponse::reply(format!("`{}` ->\n{}", text, translated))
+        .into_response()
+        .map_err(|e| (StatusCode::BAD_REQUEST, "murimuri2".to_owned()))
 }

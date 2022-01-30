@@ -6,8 +6,6 @@ steps:
         "build",
         "-t",
         "asia.gcr.io/discord-bot-308317/sushanshan",
-        "--build-arg",
-        "_DISCORD_PUBLIC_KEY=$_DISCORD_PUBLIC_KEY",
         ".",
       ]
   # Push the container image to Container Registry
@@ -30,3 +28,4 @@ steps:
       ]
 images:
   - asia.gcr.io/discord-bot-308317/sushanshan
+timeout: 1200s

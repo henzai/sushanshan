@@ -9,7 +9,8 @@ mod handler;
 async fn main() {
     let app = Router::new()
         .route("/:text", get(trans))
-        .route("/", post(handle_interaction));
+        .route("/", post(handle_interaction))
+        .route("/sushanshan", post(handle_interaction));
 
     let addr = ([0, 0, 0, 0], 8080).into();
     println!("Listening on http://{}", addr);

@@ -1,39 +1,19 @@
+use super::error::HandleError;
+use super::error::HandleError::AuthenticationForbiden;
+use super::error::HandleError::Internal;
+use crate::model::{
+    Interaction, InteractionResponse, InteractionResponseType, InteractionType, Message,
+};
+use crate::translation::Translator;
 use axum::body::Bytes;
 use axum::extract::Path;
 use axum::http::header::HeaderMap;
 use axum::response::IntoResponse;
 use ed25519_compact::{PublicKey, Signature};
 use http::StatusCode;
-
 use std::env;
-pub use translation::*;
 
-use model::{Interaction, InteractionResponse, InteractionResponseType, InteractionType, Message};
-
-use handler_error::HandleError;
-use handler_error::HandleError::AuthenticationForbiden;
-use handler_error::HandleError::Internal;
-
-mod handler_error;
-mod model;
-mod translation;
-
-pub async fn trans(Path(text): Path<String>) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let deepl_api_key =
-        env::var("DEEPL_API_KEY").map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
-
-    let translator = translation::Translator::new(&deepl_api_key);
-    let translated = translator
-        .translate(&text)
-        .await
-        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_owned()))?;
-
-    InteractionResponse::reply(format!("`{}` ->\n{}", text, translated))
-        .into_response()
-        .map_err(|e| (StatusCode::BAD_REQUEST, "murimuri2".to_owned()))
-}
-
-pub async fn su_shan_shan(
+pub async fn handle_interaction(
     headers: HeaderMap,
     body: Bytes,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
@@ -60,7 +40,7 @@ pub async fn validate(body: Bytes, headers: &HeaderMap) -> Result<(), HandleErro
 
     let timestamp = headers
         .get("X-Signature-Timestamp")
-        .ok_or(Internal("cannot get X-Signature-Timestamp".to_string()))?;
+        .ok_or_else(|| Internal("cannot get X-Signature-Timestamp".to_string()))?;
     let content = vec![timestamp.as_bytes(), &body].concat();
 
     let discord_pub_key = env::var("DISCORD_PUBLIC_KEY").map_err(|e| Internal(e.to_string()))?;
@@ -84,7 +64,7 @@ async fn response_interaction(body: Bytes) -> Result<impl IntoResponse, HandleEr
             data: None,
         }
         .into_response()
-        .map_err(|e| HandleError::ParseResponse(e)),
+        .map_err(HandleError::ParseResponse),
         InteractionType::ApplicationCommand => {
             println!("{:?}", i);
             let messages = i.data.unwrap().resolved.unwrap().messages.unwrap();
@@ -94,19 +74,41 @@ async fn response_interaction(body: Bytes) -> Result<impl IntoResponse, HandleEr
             let deepl_api_key = env::var("DEEPL_API_KEY")
                 .map_err(|e| HandleError::NotFoundSecret(e.to_string()))?;
 
-            let translator = translation::Translator::new(&deepl_api_key);
+            let translator = Translator::new(&deepl_api_key);
             let text = translator
                 .translate(&msg.content)
                 .await
-                .map_err(|e| HandleError::FailedTranslation(e))?;
+                .map_err(HandleError::FailedTranslation)?;
 
             InteractionResponse::reply(format!("`{}` ->\n{}", &msg.content, text))
                 .into_response()
-                .map_err(|e| HandleError::ParseResponse(e))
+                .map_err(HandleError::ParseResponse)
         }
     }
 }
 
 fn bind_interaction(body: Bytes) -> Result<Interaction, HandleError> {
-    serde_json::from_slice::<Interaction>(&body).map_err(|e| HandleError::Parse)
+    serde_json::from_slice::<Interaction>(&body).map_err(|_e| HandleError::Parse)
+}
+
+pub async fn translate_to_japanese(
+    Path(text): Path<String>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let deepl_api_key =
+        env::var("DEEPL_API_KEY").map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+
+    let translator = Translator::new(&deepl_api_key);
+    let translated = translator
+        .translate(&text)
+        .await
+        .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
+
+    InteractionResponse::reply(format!("`{}` ->\n{}", text, translated))
+        .into_response()
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("cannot reply response error:{}", e),
+            )
+        })
 }

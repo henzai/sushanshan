@@ -1,15 +1,14 @@
-use axum::routing::{get, post};
+use axum::routing::post;
 use axum::Router;
 use handler::su_shan_shan;
 
-use handler::trans;
+// use handler::trans;
 mod handler;
 
 #[tokio::main]
 async fn main() {
     let app = Router::new()
-        .route("/", get(root))
-        .route("/:text", get(trans))
+        // .route("/:text", get(trans))
         .route("/", post(su_shan_shan));
 
     let addr = ([0, 0, 0, 0], 8080).into();
@@ -19,8 +18,4 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
-}
-
-async fn root() -> &'static str {
-    "Hello, World!"
 }

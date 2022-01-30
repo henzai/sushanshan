@@ -1,7 +1,4 @@
-FROM rust:1.58.0 AS chef
-# We only pay the installation cost once,
-# it will be cached from the second build onwards
-RUN cargo install cargo-chef
+FROM lukemathwalker/cargo-chef:latest-rust-1.58.0 AS chef
 WORKDIR app
 
 FROM chef AS planner
@@ -19,5 +16,6 @@ RUN cargo build --release --bin sushanshan
 # We do not need the Rust toolchain to run the binary!
 FROM debian:buster-slim AS runtime
 WORKDIR app
+RUN apt-get update && apt-get install -y libssl-dev
 COPY --from=builder /app/target/release/sushanshan /usr/local/bin
 ENTRYPOINT ["/usr/local/bin/sushanshan"]

@@ -23,12 +23,12 @@ pub async fn trans(Path(text): Path<String>) -> Result<impl IntoResponse, (Statu
         env::var("DEEPL_API_KEY").map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
     let translator = translation::Translator::new(&deepl_api_key);
-    let text = translator
+    let translated = translator
         .translate(&text)
         .await
         .map_err(|e| (StatusCode::BAD_REQUEST, e.to_owned()))?;
 
-    InteractionResponse::reply(format!("{}\n>{}", text, text))
+    InteractionResponse::reply(format!("`{}` ->\n{}", text, translated))
         .into_response()
         .map_err(|e| (StatusCode::BAD_REQUEST, "murimuri2".to_owned()))
 }
@@ -100,7 +100,7 @@ async fn response_interaction(body: Bytes) -> Result<impl IntoResponse, HandleEr
                 .await
                 .map_err(|e| HandleError::FailedTranslation(e))?;
 
-            InteractionResponse::reply(format!("{}\n>{}", &msg.content, text))
+            InteractionResponse::reply(format!("`{}` ->\n{}", &msg.content, text))
                 .into_response()
                 .map_err(|e| HandleError::ParseResponse(e))
         }

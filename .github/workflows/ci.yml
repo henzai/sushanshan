@@ -17,8 +17,10 @@ jobs:
 
       - uses: Swatinem/rust-cache@v1
 
-      - name: Check
-        run: cargo check --verbose
+      - name: cargo check
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
   lint:
     runs-on: ubuntu-latest
     name: Lint

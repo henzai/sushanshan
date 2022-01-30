@@ -21,3 +21,10 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
+  build:
+    runs-on: ubuntu-latest
+    name: Check
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build
+        run: cargo build --verbose

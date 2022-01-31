@@ -5,7 +5,11 @@ use hyper::Body;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-#[derive(Debug, Deserialize)]
+use serde_json::Value;
+
+type Snowflake = String;
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct Interaction {
     #[serde(rename = "type")]
     pub interaction_type: InteractionType,
@@ -33,59 +37,81 @@ pub struct User {
     pub discriminator: String,
     pub username: String,
 }
-#[derive(Deserialize_repr, Debug)]
+#[derive(Clone, Debug, Deserialize_repr)]
 #[repr(u8)]
 pub enum InteractionType {
     Ping = 1,
     ApplicationCommand = 2,
 }
 
-type Snowflake = String;
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct ApplicationCommandInteractionData {
-    // pub id: Snowflake,
+    pub id: Snowflake,
     pub name: String,
-    pub resolved: Option<ApplicationCommandInteractionDataResolved>,
-    options: Option<Vec<ApplicationCommandInteractionDataOption>>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ApplicationCommandInteractionDataOption {
-    name: String,
     #[serde(rename = "type")]
-    option_type: ApplicationCommandOptionType,
-    // the value of the pair
-    value: Option<String>,
-    // present if this option is a group or subcommand
-    options: Option<Vec<ApplicationCommandInteractionDataOption>>,
+    pub application_command_type: ApplicationCommandType,
+    pub resolved: Option<ApplicationCommandInteractionDataResolved>,
+    pub options: Option<Vec<ApplicationCommandInteractionDataOption>>,
+    pub custom_id: Option<String>,
+    pub component_type: Option<ComponentType>,
+    pub target_id: Snowflake,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize_repr)]
+#[repr(u8)]
+pub enum ComponentType {
+    ActionRow = 1,
+    Button = 2,
+    SelectMenu = 3,
+}
+
+#[derive(Clone, Debug, Deserialize_repr)]
+#[repr(u8)]
+pub enum ApplicationCommandType {
+    ChatInput = 1,
+    User = 2,
+    Message = 3,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct ApplicationCommandInteractionDataOption {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub application_command_option_type: ApplicationCommandOptionType,
+    pub value: Option<Value>,
+    pub options: Option<Vec<ApplicationCommandInteractionDataOption>>,
+    pub focused: Option<bool>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct ApplicationCommandInteractionDataResolved {
     pub messages: Option<HashMap<String, Message>>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Message {
     pub id: Snowflake,
     pub channel_id: Snowflake,
+    pub guild_id: Option<Snowflake>,
     pub content: String,
 }
 
-#[derive(Deserialize_repr, Debug)]
+#[derive(Clone, Debug, Deserialize_repr)]
 #[repr(u8)]
-enum ApplicationCommandOptionType {
-    SUBCOMMAND = 1,
-    SUBCOMMANDGROUP = 2,
-    STRING = 3,
-    INTEGER = 4,
-    BOOLEAN = 5,
-    USER = 6,
-    CHANNEL = 7,
-    ROLE = 8,
+pub enum ApplicationCommandOptionType {
+    Subcommand = 1,
+    Subcommandgroup = 2,
+    String = 3,
+    Integer = 4,
+    Boolean = 5,
+    User = 6,
+    Channel = 7,
+    Role = 8,
+    Mentionable = 9,
+    Number = 10,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct InteractionResponse {
     #[serde(rename = "type")]
     pub interaction_response_type: InteractionResponseType,
@@ -112,7 +138,7 @@ impl InteractionResponse {
     }
 }
 
-#[derive(Serialize_repr, Debug)]
+#[derive(Clone, Debug, Serialize_repr)]
 #[repr(u8)]
 pub enum InteractionResponseType {
     Pong = 1,
@@ -122,7 +148,7 @@ pub enum InteractionResponseType {
     ACKWithSource = 5,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct InteractionApplicationCommandCallbackData {
     pub tts: Option<bool>,
     pub content: Option<String>,
